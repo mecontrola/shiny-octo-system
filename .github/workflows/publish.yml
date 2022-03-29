@@ -1,0 +1,54 @@
+name: Publish
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [ closed ]
+env:
+  app-package-directory: 'AHM Report'
+  path-publish: './Stefanini.ViaReport/bin/Release/net6.0-windows/publish'
+  certificate-name: 'AppCertificate.pfx'
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        dotnet-version: [ '6.0.x' ]
+        build-configuration: [ 'Release' ]
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@master
+      
+    - name: Setup .NET ${{ matrix.dotnet-version }}
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: ${{ matrix.dotnet-version }}
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Publish project
+      run: dotnet publish --no-restore --nologo -p:PublishProfile=Publish_Win-x64 -p:DebugType=None -p:DebugSymbols=false -p:Optimize=true -p:AssemblyVersion=1.0.0.4 -p:FileVersion=1.0.0.4
+
+
+    - name: Decode the Pfx
+      run: |
+        $pfx_cert_byte = [System.Convert]::FromBase64String("${{ secrets.Base64_Encoded_Pfx }}")
+        $currentDirectory = Get-Location
+        $certificatePath = Join-Path -Path $currentDirectory -ChildPath ${{ env:path-publish }} -AdditionalChildPath ${{ env:certificate-name }}
+        [IO.File]::WriteAllBytes("$certificatePath", $pfx_cert_byte)
+
+    - name: Sign the app with Pfx
+      run: signtool sign /f '${{ env:certificate-name }}' /p ${{ secrets:certificate-password }} /fd SHA256 '${{ env:path-publish }}/AHM Report.exe'
+      
+    - name: Remove the .pfx
+      run: Remove-Item -path '${{ env:path-publish }}\${{ env:certificate-name }}
+
+    # Upload the MSIX package: https://github.com/marketplace/actions/upload-artifact
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v1
+      with:
+        name: MSIX Package
+        path: ${{ env.path-publish }}\${{ env.app-package-directory }}
