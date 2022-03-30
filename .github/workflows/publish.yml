@@ -8,9 +8,10 @@ env:
   app-package-directory: 'AHM Report'
   path-publish: './Stefanini.ViaReport/bin/Release/net6.0-windows/publish'
   certificate-name: 'AppCertificate.pfx'
+  app-version: '1.0.0.5'
 
 jobs:
-  publish:
+  prepare-data:
     runs-on: windows-latest
     strategy:
       matrix:
@@ -26,11 +27,12 @@ jobs:
       with:
         dotnet-version: ${{ matrix.dotnet-version }}
 
-    - name: Restore dependencies
-      run: dotnet restore
-
+  publish-x86:
+    needs: prepare-data
+    runs-on: windows-2019
+    steps:
     - name: Publish project
-      run: dotnet publish --no-restore --nologo -p:PublishProfile=Publish_Win-x64 -p:DebugType=None -p:DebugSymbols=false -p:Optimize=true -p:AssemblyVersion=1.0.0.4 -p:FileVersion=1.0.0.4
+      run: dotnet publish --nologo -p:PublishProfile=Publish_Win-x86 -p:DebugType=None -p:DebugSymbols=false -p:Optimize=true -p:AssemblyVersion=${{ env.app-version }} -p:FileVersion=${{ env.app-version }}
 
 
     - name: Decode the Pfx
