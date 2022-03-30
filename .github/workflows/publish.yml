@@ -11,7 +11,7 @@ env:
   app-version: '1.0.0.5'
 
 jobs:
-  prepare-data:
+  publish-x86:
     runs-on: windows-latest
     strategy:
       matrix:
@@ -27,13 +27,8 @@ jobs:
       with:
         dotnet-version: ${{ matrix.dotnet-version }}
 
-  publish-x86:
-    needs: prepare-data
-    runs-on: windows-2019
-    steps:
     - name: Publish project
-      run: dotnet publish --nologo -p:PublishProfile=Publish_Win-x86 -p:DebugType=None -p:DebugSymbols=false -p:Optimize=true -p:AssemblyVersion=${{ env.app-version }} -p:FileVersion=${{ env.app-version }}
-
+      run: dotnet publish --nologo --self-contained -r win-x86 -p:PublishProfile=Publish_Win-x86 -p:DebugType=None -p:DebugSymbols=false -p:Optimize=true -p:AssemblyVersion=${{ env.app-version }} -p:FileVersion=${{ env.app-version }}
 
     - name: Decode the Pfx
       run: |
