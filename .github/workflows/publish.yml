@@ -38,7 +38,10 @@ jobs:
         [IO.File]::WriteAllBytes("$certificatePath", $pfx_cert_byte)
 
     - name: Sign the app with Pfx
-      run: signtool sign /f '${{ env.certificate-name }}' /p ${{ secrets.CERTIFICATE_PASSWORD }} /fd SHA256 '${{ env.path-publish }}/AHM Report.exe'
+      run: |
+        $signtool = "C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe"
+        
+        & $signtool sign /f '${{ env.certificate-name }}' /p ${{ secrets.CERTIFICATE_PASSWORD }} /fd SHA256 '${{ env.path-publish }}/AHM Report.exe'
       
     - name: Remove the .pfx
       run: Remove-Item -path '${{ env.path-publish }}\${{ env.certificate-name }}
