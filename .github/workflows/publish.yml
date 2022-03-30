@@ -2,8 +2,8 @@ name: Publish
 
 on:
   pull_request:
-    branches: [ main ]
-    types: [ closed ]
+    branches: [ main, develop ]
+    
 env:
   app-package-directory: 'AHM Report'
   path-publish: './Stefanini.ViaReport/bin/Release/net6.0-windows/publish'
