@@ -47,7 +47,7 @@ jobs:
     #  run: Remove-Item -path '${{ env.path-publish }}\${{ env.certificate-name }}
 
     - name: Zip Folder
-      run: 7za a -tzip '${{ env.app-package-name }} v${{ env.app-version }}.zip' -r '${{ env.path-publish }}\*'
+      run: 7z a -tzip '${{ env.app-package-name }} v${{ env.app-version }}.zip' -r '${{ env.path-publish }}\*'
 
     - name: Create Release
       id: create_release
