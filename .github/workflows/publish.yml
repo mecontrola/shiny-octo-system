@@ -1,24 +1,49 @@
-name: Publish
+name: Create Release
 
 on:
   pull_request:
     branches: [ main, develop ]
+#  push:
+#    tags:
+#      - 'v*'
     
-env:
-  app-package-name: 'AHM Report'
-  path-publish: './Stefanini.ViaReport/bin/Release/net6.0-windows/publish'
-  #certificate-name: 'AppCertificate.pfx'
-  app-version: '1.0.0.5'
+#env:
+#  certificate-name: 'AppCertificate.pfx'
+#  app-version: '1.0.0.5'
 
 jobs:
-  publish-x86:
+  release:
+    runs-on: windows-latest
+    steps:
+    - name: Extract Tag version
+      shell: bash
+      run: echo "##[set-output name=version;]$(echo ${GITHUB_REF#refs/tags/})"
+      id: extract_tag
+
+    - name: Create Release v${{ steps.extract_tag.outputs.version }}
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+      with:
+        tag_name: v${{ steps.extract_tag.outputs.version }}
+        release_name: v${{ steps.extract_tag.outputs.version }}
+        draft: false
+        prerelease: false
+
+  publish:
+    needs: release
     runs-on: windows-latest
     strategy:
       matrix:
         dotnet-version: [ '6.0.x' ]
         build-configuration: [ 'Release' ]
         build-architecture: [ 'x86', 'x64' ]
-
+    env:
+      app-version: needs.release.extract_tag.outputs.version
+      app-package-name: 'AHM Report'
+      path-publish: './Stefanini.ViaReport/bin/Release/net6.0-windows/publish'
+      upload_url: needs.release.create_release.outputs.upload_url
     steps:
     - name: Checkout v${{ env.app-version }}
       uses: actions/checkout@master
@@ -27,17 +52,6 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: ${{ matrix.dotnet-version }}
-
-    - name: Create Release v${{ env.app-version }}
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
-      with:
-        tag_name: v${{ env.app-version }}
-        release_name: Release v${{ env.app-version }}
-        draft: false
-        prerelease: false
 
     - name: Publish Project ${{ matrix.build-architecture }}
       run: dotnet publish --nologo --self-contained -r win-${{ matrix.build-architecture }} -p:PublishProfile=Publish_Win-${{ matrix.build-architecture }} -p:DebugType=None -p:DebugSymbols=false -p:Optimize=true -p:AssemblyVersion=${{ env.app-version }} -p:FileVersion=${{ env.app-version }}
@@ -67,7 +81,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        upload_url: ${{ env.upload_url }}
         asset_path: './${{ env.app-package-name }}-v${{ env.app-version }}_${{ matrix.build-architecture }}.zip'
         asset_name: '${{ env.app-package-name }}-v${{ env.app-version }}_${{ matrix.build-architecture }}.zip'
         asset_content_type: application/octet-stream
