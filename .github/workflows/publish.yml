@@ -31,6 +31,18 @@ jobs:
         release_name: v${{ steps.extract_tag.outputs.version }}
         draft: false
         prerelease: false
+        
+    #- name: Generate envs
+    #  run: echo "${{ steps.extract_tag.outputs.version }}|${{ steps.create_release.outputs.upload_url }}" > envs.txt
+    #  
+    #- name: Save envs for publish
+    #  uses: actions/upload-artifact@v1
+    #  with:
+    #    name: envs
+    #    path: envs.txt
+    outputs:
+      app-version: ${{ steps.extract_tag.outputs.version }}
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
 
   publish:
     needs: release
@@ -41,11 +53,22 @@ jobs:
         build-configuration: [ 'Release' ]
         build-architecture: [ 'x86', 'x64' ]
     env:
-      app-version: ${{ needs.release.extract_tag.outputs.version }}
+      app-version: ${{ needs.release.outputs.version }}
       app-package-name: 'AHM Report'
       path-publish: './Stefanini.ViaReport/bin/Release/net6.0-windows/publish'
-      upload_url: ${{ needs.release.create_release.outputs.upload_url }}
+      upload_url: ${{ needs.release.outputs.upload_url }}
     steps:
+    #- name: Load envs for publish
+    #  uses: actions/download-artifact@v1
+    #  with:
+    #    name: release_url
+    #    
+    #- name: Get Release File Name & Upload URL
+    #  id: get_release_info
+    #  run: |
+    #    value=`cat release_url/release_url.txt`
+    #    echo ::set-output name=upload_url::$value
+
     - name: Checkout v${{ env.app-version }}
       uses: actions/checkout@master
       
