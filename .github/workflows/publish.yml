@@ -5,7 +5,7 @@ on:
     branches: [ main, develop ]
     
 env:
-  app-package-directory: 'AHM Report'
+  app-package-name: 'AHM Report'
   path-publish: './Stefanini.ViaReport/bin/Release/net6.0-windows/publish'
   certificate-name: 'AppCertificate.pfx'
   app-version: '1.0.0.5'
@@ -47,7 +47,7 @@ jobs:
     #  run: Remove-Item -path '${{ env.path-publish }}\${{ env.certificate-name }}
 
     - name: Zip Folder
-      run: zip -r '${{ env.app-package-directory }} ${{ env.app-version }}.zip' ${{ env.path-publish }}
+      run: 7za a -tzip '${{ env.app-package-name }} v${{ env.app-version }}.zip' -r '${{ env.path-publish }}\*'
 
     - name: Create Release
       id: create_release
@@ -67,6 +67,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: '${{ env.path-publish }}\${{ env.app-package-directory }} ${{ env.app-version }}.zip'
-        asset_name: '${{ env.app-package-directory }} ${{ env.app-version }}.zip'
+        asset_path: '${{ env.path-publish }}\${{ env.app-package-name }} ${{ env.app-version }}.zip'
+        asset_name: '${{ env.app-package-name }} ${{ env.app-version }}.zip'
         asset_content_type: application/octet-stream
