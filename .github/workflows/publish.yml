@@ -10,23 +10,26 @@ jobs:
     runs-on: windows-latest
     steps:
     - name: Extract Tag version
-      shell: bash
-      run: echo "##[set-output name=version;]$(echo ${GITHUB_REF#refs/tags/})"
       id: extract_tag
+      uses: actions/github-script@0.2.0
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          return context.payload.ref.replace(/\/?refs\/tags\/v?/, '');
 
-    - name: Create Release v${{ steps.extract_tag.outputs.version }}
+    - name: Create Release ${{ steps.extract_tag.outputs.result }}
       id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
       with:
-        tag_name: v${{ steps.extract_tag.outputs.version }}
-        release_name: v${{ steps.extract_tag.outputs.version }}
+        tag_name: ${{ steps.extract_tag.outputs.result }}
+        release_name: ${{ steps.extract_tag.outputs.result }}
         draft: false
         prerelease: false
 
     outputs:
-      app-version: ${{ steps.extract_tag.outputs.version }}
+      app-version: ${{ steps.extract_tag.outputs.result }}
       upload_url: ${{ steps.create_release.outputs.upload_url }}
 
   publish:
@@ -72,7 +75,7 @@ jobs:
     #  run: Remove-Item -path '${{ env.path-publish }}\${{ env.certificate-name }}
 
     - name: Zip Project ${{ matrix.build-architecture }}
-      run: 7z a -tzip '${{ env.app-package-name }}-v${{ env.app-version }}_${{ matrix.build-architecture }}.zip' -r '${{ env.path-publish }}\*'
+      run: 7z a -tzip '${{ env.app-package-name }}-${{ env.app-version }}_${{ matrix.build-architecture }}.zip' -r '${{ env.path-publish }}\*'
 
     - name: Upload Release ${{ matrix.build-architecture }}
       id: upload-release-asset 
@@ -81,6 +84,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
       with:
         upload_url: ${{ env.upload_url }}
-        asset_path: './${{ env.app-package-name }}-v${{ env.app-version }}_${{ matrix.build-architecture }}.zip'
-        asset_name: '${{ env.app-package-name }}-v${{ env.app-version }}_${{ matrix.build-architecture }}.zip'
+        asset_path: './${{ env.app-package-name }}-${{ env.app-version }}_${{ matrix.build-architecture }}.zip'
+        asset_name: '${{ env.app-package-name }}-${{ env.app-version }}_${{ matrix.build-architecture }}.zip'
         asset_content_type: application/octet-stream
