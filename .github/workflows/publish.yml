@@ -7,8 +7,8 @@ on:
 env:
   app-package-name: 'AHM Report'
   path-publish: './Stefanini.ViaReport/bin/Release/net6.0-windows/publish'
-  certificate-name: 'AppCertificate.pfx'
-  app-version: '1.0.0.6'
+  #certificate-name: 'AppCertificate.pfx'
+  app-version: '1.0.0.5'
 
 jobs:
   publish-x86:
@@ -27,6 +27,17 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: ${{ matrix.dotnet-version }}
+
+    - name: Create Release v${{ env.app-version }}
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+      with:
+        tag_name: v${{ env.app-version }}
+        release_name: Release v${{ env.app-version }}
+        draft: false
+        prerelease: false
 
     - name: Publish Project ${{ matrix.build-architecture }}
       run: dotnet publish --nologo --self-contained -r win-${{ matrix.build-architecture }} -p:PublishProfile=Publish_Win-${{ matrix.build-architecture }} -p:DebugType=None -p:DebugSymbols=false -p:Optimize=true -p:AssemblyVersion=${{ env.app-version }} -p:FileVersion=${{ env.app-version }}
@@ -49,17 +60,6 @@ jobs:
 
     - name: Zip Project ${{ matrix.build-architecture }}
       run: 7z a -tzip '${{ env.app-package-name }}-v${{ env.app-version }}_${{ matrix.build-architecture }}.zip' -r '${{ env.path-publish }}\*'
-
-    - name: Create Release v${{ env.app-version }}
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
-      with:
-        tag_name: v${{ env.app-version }}
-        release_name: Release v${{ env.app-version }}
-        draft: false
-        prerelease: false
 
     - name: Upload Release ${{ matrix.build-architecture }}
       id: upload-release-asset 
