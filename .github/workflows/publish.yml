@@ -1,11 +1,9 @@
 name: Create Release
 
 on:
-  pull_request:
-    branches: [ main, develop ]
-#  push:
-#    tags:
-#      - 'v*'
+  push:
+    tags:
+      - 'v*'
     
 #env:
 #  certificate-name: 'AppCertificate.pfx'
