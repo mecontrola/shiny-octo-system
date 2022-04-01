@@ -1,32 +1,43 @@
 name: Create Release
 
 on:
-  pull_request:
-    branches: [ main ]
-    types: [ closed ]
+   push :
+    tags :
+      - 'v*'
+#  pull_request:
+#    branches: [ 'releases/**' ]
+#    types: [ closed ]
 
 jobs:
   release:
     runs-on: windows-latest
     steps:
-    - name: Extract Branch version
-      shell: bash
-      run: echo "##[set-output name=app-version;]$(echo ${GITHUB_REF#refs/heads/})"
-      id: extract_branch
+#    - name: Extract Branch version
+#      id: extract_branch
+#      shell: bash
+#      run: echo "##[set-output name=app-version;]$(echo ${GITHUB_REF#refs/heads/})"
 
-    - name: Create Release ${{ steps.extract_branch.outputs.app-version }}
+    - name: Extract Tag version
+      id: app-version
+      uses: actions/github-script@0.2.0
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          return context.payload.ref.replace(/\/refs\/tags\//, '');
+
+    - name: Create Release v${{ steps.app-version.outputs.result }}
       id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
       with:
-        tag_name: ${{ steps.extract_branch.outputs.app-version }}
-        release_name: ${{ steps.extract_branch.outputs.app-version }}
+        tag_name: ${{ github.ref }}
+        release_name: ${{ steps.app-version.outputs.result  }}
         draft: false
         prerelease: false
 
     outputs:
-      app-version: ${{ steps.extract_branch.outputs.app-version }}
+      app-version: ${{ steps.app-version.outputs.result }}
       upload_url: ${{ steps.create_release.outputs.upload_url }}
 
   publish:
@@ -44,7 +55,7 @@ jobs:
       upload_url: ${{ needs.release.outputs.upload_url }}
     #  certificate-name: 'AppCertificate.pfx'
     steps:
-    - name: Checkout ${{ env.app-version }}
+    - name: Checkout v${{ env.app-version }}
       uses: actions/checkout@master
       
     - name: Setup .NET ${{ matrix.dotnet-version }}
@@ -72,7 +83,7 @@ jobs:
     #  run: Remove-Item -path '${{ env.path-publish }}\${{ env.certificate-name }}
 
     - name: Zip Project ${{ matrix.build-architecture }}
-      run: 7z a -tzip '${{ env.app-package-name }}-${{ env.app-version }}_${{ matrix.build-architecture }}.zip' -r '${{ env.path-publish }}\*'
+      run: 7z a -tzip '${{ env.app-package-name }}-v${{ env.app-version }}_${{ matrix.build-architecture }}.zip' -r '${{ env.path-publish }}\*'
 
     - name: Upload Release ${{ matrix.build-architecture }}
       id: upload-release-asset 
@@ -81,6 +92,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
       with:
         upload_url: ${{ env.upload_url }}
-        asset_path: './${{ env.app-package-name }}-${{ env.app-version }}_${{ matrix.build-architecture }}.zip'
-        asset_name: '${{ env.app-package-name }}-${{ env.app-version }}_${{ matrix.build-architecture }}.zip'
+        asset_path: './${{ env.app-package-name }}-v${{ env.app-version }}_${{ matrix.build-architecture }}.zip'
+        asset_name: '${{ env.app-package-name }}-v${{ env.app-version }}_${{ matrix.build-architecture }}.zip'
         asset_content_type: application/octet-stream
