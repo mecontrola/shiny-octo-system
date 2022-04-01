@@ -9,27 +9,24 @@ jobs:
   release:
     runs-on: windows-latest
     steps:
-    - name: Extract Tag version
-      id: extract_tag
-      uses: actions/github-script@0.2.0
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          return context.payload.ref.replace(/\/?refs\/heads\/v?/, '');
+    - name: Extract Branch version
+      shell: bash
+      run: echo "##[set-output name=app-version;]$(echo ${GITHUB_REF#refs/heads/})"
+      id: extract_branch
 
-    - name: Create Release ${{ steps.extract_tag.outputs.result }}
+    - name: Create Release ${{ steps.extract_branch.outputs.app-version }}
       id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
       with:
-        tag_name: ${{ steps.extract_tag.outputs.result }}
-        release_name: ${{ steps.extract_tag.outputs.result }}
+        tag_name: ${{ steps.extract_branch.outputs.app-version }}
+        release_name: ${{ steps.extract_branch.outputs.app-version }}
         draft: false
         prerelease: false
 
     outputs:
-      app-version: ${{ steps.extract_tag.outputs.result }}
+      app-version: ${{ steps.extract_branch.outputs.app-version }}
       upload_url: ${{ steps.create_release.outputs.upload_url }}
 
   publish:
