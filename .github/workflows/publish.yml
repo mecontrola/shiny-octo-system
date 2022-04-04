@@ -11,6 +11,8 @@ on:
 jobs:
   release:
     runs-on: windows-latest
+    permissions:
+      contents: write
     steps:
 #    - name: Extract Branch version
 #      id: extract_branch
@@ -25,16 +27,25 @@ jobs:
         script: |
           return context.payload.ref.replace(/\/refs\/tags\/v/, '');
 
+    #- name: Create Release v${{ steps.app-version.outputs.result }}
+    #  id: create_release
+    #  uses: actions/create-release@v1
+    #  env:
+    #    GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+    #  with:
+    #    tag_name: ${{ github.ref }}
+    #    release_name: v${{ steps.app-version.outputs.result  }}
+    #    draft: false
+    #    prerelease: false
+
     - name: Create Release v${{ steps.app-version.outputs.result }}
       id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+      uses: ncipollo/release-action@v1
       with:
-        tag_name: ${{ github.ref }}
-        release_name: v${{ steps.app-version.outputs.result  }}
+        name: v${{ steps.app-version.outputs.result  }}
         draft: false
         prerelease: false
+        token: ${{ secrets.GIT_TOKEN }}
 
     outputs:
       app-version: ${{ steps.app-version.outputs.result }}
