@@ -25,7 +25,7 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
-          return context.payload.ref.replace(/\/refs\/tags\/v/, '');
+          return context.payload.ref.replace(/(\/)?refs\/tags\/[v]+/, '');
 
     #- name: Create Release v${{ steps.app-version.outputs.result }}
     #  id: create_release
@@ -43,6 +43,7 @@ jobs:
       uses: ncipollo/release-action@v1
       with:
         name: v${{ steps.app-version.outputs.result  }}
+        commit: true
         draft: false
         prerelease: false
         token: ${{ secrets.GIT_TOKEN }}
