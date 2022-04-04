@@ -4,9 +4,6 @@ on:
   push:
     tags:
       - 'v*'
-#  pull_request:
-#    branches: [ 'releases/**' ]
-#    types: [ closed ]
 
 jobs:
   release:
@@ -14,18 +11,13 @@ jobs:
     permissions:
       contents: write
     steps:
-#    - name: Extract Branch version
-#      id: extract_branch
-#      shell: bash
-#      run: echo "##[set-output name=app-version;]$(echo ${GITHUB_REF#refs/heads/})"
-
     - name: Extract Tag version
       id: app-version
       uses: actions/github-script@v3
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
-          return context.payload.ref.replace(/(\/)?refs\/tags\/[v]+/, '');
+          return context.payload.ref.replace(/(\/)?refs\/tags\/[v]+/, '').replace('"', '');
 
     - name: Create Release v${{ steps.app-version.outputs.result }}
       id: create_release
