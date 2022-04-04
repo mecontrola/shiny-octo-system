@@ -11,34 +11,29 @@ jobs:
     permissions:
       contents: write
     steps:
+    #- name: Extract Tag version
+    #  id: app-version
+    #  uses: actions/github-script@v3
+    #  with:
+    #    github-token: ${{ secrets.GITHUB_TOKEN }}
+    #    script: |
+    #      return context.payload.ref.replace(/(\/)?refs\/tags\/[v]+/, '');
+
     - name: Extract Tag version
       id: app-version
-      uses: actions/github-script@v3
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          return context.payload.ref.replace(/(\/)?refs\/tags\/[v]+/, '').replace('"', '');
+      shell: bash
+      run: echo "::set-output name=version::${GITHUB_REF#refs/tags/v}"
 
-    - name: Create Release v${{ steps.app-version.outputs.result }}
+    - name: Create Release v${{ steps.app-version.outputs.version }}
       id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
       with:
         tag_name: ${{ github.ref }}
-        release_name: v${{ steps.app-version.outputs.result  }}
+        release_name: v${{ steps.app-version.outputs.version  }}
         draft: false
         prerelease: false
-
-    #- name: Create Release v${{ steps.app-version.outputs.result }}
-    #  id: create_release
-    #  uses: ncipollo/release-action@v1
-    #  with:
-    #    name: v${{ steps.app-version.outputs.result }}
-    #    commit: true
-    #    draft: false
-    #    prerelease: false
-    #    token: ${{ secrets.GIT_TOKEN }}
 
     outputs:
       app-version: ${{ steps.app-version.outputs.result }}
