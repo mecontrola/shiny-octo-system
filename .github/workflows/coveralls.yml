@@ -1,0 +1,79 @@
+name: Coveralls
+
+on:
+  push:
+    branches: [ main, develop ]
+env:
+  path-lcov: './Coverage'
+  filename-lcov: 'lcov.info'
+  filename-tmp-lcov: 'coverage.info'
+  coveralls-service-name: 'Git Hub Action'
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        dotnet-version: [ '6.0.x' ]
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@master
+    
+    - name: Setup .NET ${{ matrix.dotnet-version }}
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: ${{ matrix.dotnet-version }}
+
+    - name: Restore dependencies
+      run: dotnet restore --nologo --verbosity=minimal --force
+
+    - name: Build
+      run: dotnet build --nologo --verbosity=minimal --no-restore
+      
+    - name: Generate coverage report
+      run: dotnet test --nologo --verbosity=minimal --no-restore --no-build /p:CollectCoverage=true /p:CoverletOutputFormat=lcov
+
+    - name: Merge coverage report projects
+      run: |
+        dotnet new tool-manifest
+        dotnet tool install dotnet-reportgenerator-globaltool --tool-path tools
+        dotnet tool restore
+        
+        $reportgenerator = ".\tools\reportgenerator.exe"
+        
+        & $reportgenerator -reports:**/${{ env.filename-tmp-lcov }} -targetdir:${{ env.path-lcov }} -reporttypes:lcov
+
+    - name: Save coverage file
+      uses: actions/upload-artifact@master
+      with:
+        name: coverage-file
+        path: ${{ env.path-lcov }}
+
+  publish:
+    needs: build-test
+    runs-on: windows-2019
+    steps:
+    - name: Checkout
+      uses: actions/checkout@master
+    
+    - name: Load coverage file
+      uses: actions/download-artifact@master
+      with:
+        name: coverage-file
+        path: ${{ env.path-lcov }}
+        
+    - name: Extract branch name
+      shell: bash
+      run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+      id: extract_branch
+    
+    - name: Publish coverage report to coveralls.io
+      run: |
+        dotnet new tool-manifest
+        dotnet tool install coveralls.net --tool-path tools
+        dotnet tool restore
+        
+        $coveralls = ".\tools\csmacnz.coveralls.exe"
+        
+        & $coveralls --repoToken ${{ secrets.COVERALLS_REPO_TOKEN }} --commitBranch "${{ steps.extract_branch.outputs.branch }}" --serviceName "${{ env.coveralls-service-name }}" --lcov -i ${{ env.path-lcov }}/${{ env.filename-lcov }} --useRelativePaths --commitId ${{ github.sha }}
