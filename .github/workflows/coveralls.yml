@@ -1,0 +1,81 @@
+name: Coveralls
+
+on:
+  push:
+    branches: [ main, develop ]
+env:
+  path-lcov: './Coverage'
+  filename-lcov: 'lcov.info'
+  filename-tmp-lcov: 'coverage.info'
+  coveralls-service-name: 'Git Hub Action'
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        dotnet-version: [ '6.0.x' ]
+
+    steps:
+    - name: Checkout Branch
+      uses: actions/checkout@master
+    
+    - name: Setup .NET ${{ matrix.dotnet-version }}
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: ${{ matrix.dotnet-version }}
+
+    - name: Restore Dependencies
+      run: dotnet restore --nologo --verbosity=minimal --force
+
+    - name: Build Solution
+      run: dotnet build --nologo --verbosity=minimal --no-restore
+      
+    - name: Generate Coverage Report
+      run: dotnet test --nologo --verbosity=minimal --no-restore --no-build /p:CollectCoverage=true /p:CoverletOutputFormat=lcov
+
+    - name: Merge Coverage Report Projects
+      run: |
+        dotnet new tool-manifest
+        dotnet tool install dotnet-reportgenerator-globaltool --tool-path tools
+        dotnet tool restore
+        
+        $reportgenerator = ".\tools\reportgenerator.exe"
+        
+        & $reportgenerator -reports:**/${{ env.filename-tmp-lcov }} -targetdir:${{ env.path-lcov }} -reporttypes:lcov
+
+    - name: Save Coverage File
+      uses: actions/upload-artifact@master
+      with:
+        name: coverage-file
+        path: ${{ env.path-lcov }}
+
+  publish:
+    needs: build-test
+    runs-on: windows-2019
+    steps:
+    - name: Checkout Branch
+      uses: actions/checkout@master
+    
+    - name: Load Coverage File
+      uses: actions/download-artifact@master
+      with:
+        name: coverage-file
+        path: ${{ env.path-lcov }}
+        
+    - name: Extract Branch Name
+      shell: bash
+      run: |
+        echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+        echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+      id: extract_branch
+    
+    - name: Publish coverage report to coveralls.io
+      run: |
+        dotnet new tool-manifest
+        dotnet tool install coveralls.net --tool-path tools
+        dotnet tool restore
+        
+        $coveralls = ".\tools\csmacnz.coveralls.exe"
+        
+        & $coveralls --repoToken ${{ secrets.COVERALLS_REPO_TOKEN }} --commitId ${{ steps.extract_branch.outputs.sha_short }} --commitBranch "${{ steps.extract_branch.outputs.branch }}" --serviceName "${{ env.coveralls-service-name }} In ${{ steps.extract_branch.outputs.branch }}" --lcov -i ${{ env.path-lcov }}/${{ env.filename-lcov }} --useRelativePaths
