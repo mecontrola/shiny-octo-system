@@ -23,27 +23,16 @@ jobs:
       fail-fast: false
       matrix:
         language: [ 'csharp' ]
-        dotnet-version: [ '6.0.x' ]
 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v2
-      with:
-        fetch-depth: 2
-
-    - run: Git Checkout HEAD^2
-      if: ${{ github.event_name == 'pull_request' }}
 
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v1
       with:
         languages: ${{ matrix.language }}
         config-file: ./.github/codeql/codeql-config.yml
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: ${{ matrix.dotnet-version }}
 
     - name: Autobuild
       uses: github/codeql-action/autobuild@v1
