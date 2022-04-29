@@ -23,12 +23,6 @@ namespace Stefanini.ViaReport.Updater.Extensions
         [DllImport("user32.dll")]
         internal static extern bool SetWindowPos(IntPtr hwnd, IntPtr hwndInsertAfter, int x, int y, int width, int height, uint flags);
 
-        /// <summary>
-        /// Hides icon for window.
-        /// If this is called before InitializeComponent() then the icon will be completely removed from the title bar
-        /// If this is called after InitializeComponent() then an empty image is used but there will be empty space between window border and title
-        /// </summary>
-        /// <param name="window">Window class</param>
         public static void HideIcon(this Window window)
         {
             if (window.IsInitialized)
@@ -39,14 +33,11 @@ namespace Stefanini.ViaReport.Updater.Extensions
             {
                 window.SourceInitialized += delegate
                 {
-                    // Get this window's handle
                     var hwnd = new WindowInteropHelper(window).Handle;
 
-                    // Change the extended window style to not show a window icon
                     int extendedStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
                     _ = SetWindowLong(hwnd, GWL_EXSTYLE, extendedStyle | WS_EX_DLGMODALFRAME);
 
-                    // Update the window's non-client area to reflect the changes
                     SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
                 };
             }
