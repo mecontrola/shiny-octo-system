@@ -50,6 +50,7 @@ jobs:
       with:
         name: coverage-file
         path: ${{ env.path-lcov }}
+        if-no-files-found: error
 
   publish:
     needs: build-test
@@ -68,10 +69,17 @@ jobs:
       shell: bash
       run: |
         echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-        echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+        echo "::set-output name=sha_short::$(git rev-parse HEAD)"
       id: extract_branch
+
+    - name: Check file existence
+      id: check_files
+      uses: andstor/file-existence-action@v1
+        with:
+          files: "${{ env.path-lcov }}/${{ env.filename-lcov }}"
     
     - name: Publish coverage report to coveralls.io
+      if: steps.check_files.outputs.files_exists == 'true'
       run: |
         dotnet new tool-manifest
         dotnet tool install coveralls.net --tool-path tools
