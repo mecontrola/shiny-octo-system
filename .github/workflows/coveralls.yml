@@ -75,8 +75,8 @@ jobs:
     - name: Check Lcov File Existence
       id: check_files
       uses: andstor/file-existence-action@v1
-        with:
-          files: "${{ env.path-lcov }}/${{ env.filename-lcov }}"
+      with:
+        files: "${{ env.path-lcov }}/${{ env.filename-lcov }}"
     
     - name: Publish coverage report to coveralls.io
       if: steps.check_files.outputs.files_exists == 'true'
