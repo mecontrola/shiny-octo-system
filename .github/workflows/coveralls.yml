@@ -8,7 +8,6 @@ env:
   path-lcov: './BuildReports/Coverage'
   filename-lcov: 'lcov.info'
   filename-tmp-xml: 'cobertura.xml'
-  coveralls-service-name: 'Git Hub Action'
 
 jobs:
   build-test:
@@ -56,21 +55,11 @@ jobs:
     needs: build-test
     runs-on: windows-latest
     steps:
-    - name: Checkout Branch
-      uses: actions/checkout@master
-    
     - name: Load Coverage File
       uses: actions/download-artifact@master
       with:
         name: coverage-file
         path: ${{ env.path-lcov }}
-        
-    - name: Extract Branch Name
-      shell: bash
-      run: |
-        echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-        echo "::set-output name=sha_short::$(git rev-parse HEAD)"
-      id: extract_branch
 
     - name: Check Lcov File Existence
       id: check_files
