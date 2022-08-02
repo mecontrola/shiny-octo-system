@@ -4,9 +4,10 @@ on:
   push:
     branches: [ main, develop ]
 env:
-  path-lcov: './Coverage'
+  path-tests: './BuildReports/UnitTests'
+  path-lcov: './BuildReports/Coverage'
   filename-lcov: 'lcov.info'
-  filename-tmp-lcov: 'coverage.info'
+  filename-tmp-xml: 'cobertura.xml'
   coveralls-service-name: 'Git Hub Action'
 
 jobs:
@@ -32,7 +33,7 @@ jobs:
       run: dotnet build --nologo --verbosity=minimal --no-restore
       
     - name: Generate Coverage Report
-      run: dotnet test --nologo --verbosity=minimal --no-restore --no-build /p:CollectCoverage=true /p:CoverletOutputFormat=lcov
+      run: dotnet test --results-directory ${{ matrix.path-tests }} --collect:"XPlat Code Coverage" --nologo --no-restore --no-build --verbosity=minimal /p:CollectCoverage=true /p:CoverletOutput="${{ matrix.path-lcov }}" /p:CoverletOutputFormat=cobertura /p:Exclude="[xunit.*]*%2c[Stefanini.*]Stefanini.ViaReport.DataStorage.Migrations.*"
 
     - name: Merge Coverage Report Projects
       run: |
@@ -42,7 +43,7 @@ jobs:
         
         $reportgenerator = ".\tools\reportgenerator.exe"
         
-        & $reportgenerator -reports:**/${{ env.filename-tmp-lcov }} -targetdir:${{ env.path-lcov }} -reporttypes:lcov
+        & $reportgenerator -reports:${{ matrix.path-tests }}/**/*.${{ env.filename-tmp-xml }} -targetdir:${{ env.path-lcov }} -assemblyfilters:"-xunit*;" -classfilters:"-Stefanini.ViaReport.DataStorage.Migrations.*" -reporttypes:lcov
 
     - name: Save Coverage File
       uses: actions/upload-artifact@master
