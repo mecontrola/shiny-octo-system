@@ -80,9 +80,7 @@ jobs:
     
     - name: Publish coverage report to coveralls.io
       if: steps.check_files.outputs.files_exists == 'true'
-      run: |
-        dotnet new tool-manifest
-        dotnet tool install coveralls.net --tool-path tools
-        dotnet tool restore
-        
-        dotnet csmacnz.Coveralls --repoToken ${{ secrets.COVERALLS_REPO_TOKEN }} --commitId ${{ steps.extract_branch.outputs.sha_short }} --commitBranch "${{ steps.extract_branch.outputs.branch }}" --serviceName "${{ env.coveralls-service-name }} In ${{ steps.extract_branch.outputs.branch }}" --lcov -i ${{ env.path-lcov }}/${{ env.filename-lcov }} --useRelativePaths
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.GIT_TOKEN }}
+        path-to-lcov: ${{ env.path-lcov }}/${{ env.filename-lcov }}
