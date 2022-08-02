@@ -10,7 +10,7 @@ env:
   filename-tmp-xml: 'cobertura.xml'
 
 jobs:
-  build-test:
+  cover-publish:
     runs-on: windows-latest
     strategy:
       matrix:
@@ -43,23 +43,6 @@ jobs:
         $reportgenerator = ".\tools\reportgenerator.exe"
         
         & $reportgenerator -reports:${{ env.path-tests }}/**/*.${{ env.filename-tmp-xml }} -targetdir:${{ env.path-lcov }} -assemblyfilters:"-xunit*;" -classfilters:"-Stefanini.ViaReport.DataStorage.Migrations.*" -reporttypes:lcov
-
-    - name: Save Coverage File
-      uses: actions/upload-artifact@master
-      with:
-        name: coverage-file
-        path: ${{ env.path-lcov }}
-        if-no-files-found: error
-
-  publish:
-    needs: build-test
-    runs-on: windows-latest
-    steps:
-    - name: Load Coverage File
-      uses: actions/download-artifact@master
-      with:
-        name: coverage-file
-        path: ${{ env.path-lcov }}
 
     - name: Check Lcov File Existence
       id: check_files
